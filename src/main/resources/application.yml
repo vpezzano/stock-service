@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: stock-service
+    
+server:
+  port: 8301
+  
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      default-zone: http://localhost:8070/eureka/
+      
+    
+  instance:
+    hostname: localhost
