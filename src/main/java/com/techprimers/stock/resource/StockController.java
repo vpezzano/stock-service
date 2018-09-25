@@ -14,30 +14,40 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.techprimers.stock.model.Quote;
+
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 
 @RestController
 @RequestMapping("/rest/stock")
 public class StockController {
-	private static final String URL = "http://localhost:8300/rest/db/quotes/";
+	/*
+	 * Here db-service is the name we used to register the db-service
+	 * microservice to Eureka
+	 */
+	private static final String URL = "http://db-service/rest/db/quotes/";
 
 	@Autowired
 	private RestTemplate restTemplate;
 
 	@GetMapping("/{username}")
-	public List<Stock> getStock(@PathVariable final String username) throws IOException {
+	public List<Quote> getStock(@PathVariable final String username) throws IOException {
 		ResponseEntity<List<String>> responseEntity = restTemplate.exchange(URL + username, HttpMethod.GET, null,
 				new ParameterizedTypeReference<List<String>>() {
 				});
 		List<String> quotes = responseEntity.getBody();
-		return quotes.stream().map(this::getStockQuote).collect(Collectors.toList());
+		return quotes.stream().map(quote -> {
+			Stock stock = getStockPrice(quote);
+			return new Quote(quote, stock.getQuote().getPrice());
+		}).collect(Collectors.toList());
 	}
 
-	private Stock getStockQuote(String quote) {
+	private Stock getStockPrice(String quote) {
 		try {
 			return YahooFinance.get(quote);
 		} catch (IOException e) {
+			e.printStackTrace();
 			return new Stock(quote);
 		}
 	}
